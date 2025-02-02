@@ -1,0 +1,5 @@
+fastapi==0.95.2
+pyspark==3.4.0
+requests==2.31.0
+uvicorn==0.22.0
+sodapy==2.2.0 
