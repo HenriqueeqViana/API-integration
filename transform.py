@@ -4,7 +4,7 @@ from extract import ExtractAPI
 import os
 
 
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+
 
 class Transform:
     def __init__(self, spark):

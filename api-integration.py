@@ -16,6 +16,8 @@ dataset_id = os.getenv("DATASET_ID", "jt8s-3q52")
 base_url = os.getenv("BASE_URL", "opendata.usac.org")
 funding_year = os.getenv("FUNDING_YEAR", "2024")
 
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+
 spark = SparkSession.builder \
     .appName("FastAPI-Spark") \
     .master("local[*]") \
