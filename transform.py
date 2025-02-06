@@ -18,7 +18,7 @@ class Transform:
         directory_path = f"./bronze/{funding_year}/files"
         os.makedirs(directory_path, exist_ok=True)
         file_path = f"{directory_path}/raw_data"
-        
+
         if format == "csv":
             df.write.csv(file_path, header=True, mode="overwrite", compression=compression)
         elif format == "json":
@@ -28,21 +28,7 @@ class Transform:
 
     def transform_data(self, file_path):
         df = self.spark.read.json(file_path)
-        df.show(1)
-        df.printSchema()
         df = df.filter((F.col('form_version') == 'Current') | (F.col('form_version') == 'Original'))
-        required_columns = [
-            'application_number', 'rfp_documents', 
-            'rfp_upload_date', 'rfp_identifier', 
-            'minimum_capacity', 'maximum_capacity', 
-            'quantity', 'entities', 'funding_year', 
-            'fcc_form_470_status', 'allowable_contract_date',
-            'certified_date_time', 'last_modified_date_time'
-        ]
-
-        for column in required_columns:
-            if column not in df.columns:
-                raise ValueError(f"A coluna '{column}' não está presente no DataFrame.")
 
         df = df.withColumn(
             'total_services_requested',
@@ -72,8 +58,36 @@ class Transform:
             'certified_date_time', 
             'last_modified_date_time'
         )
+        
+        billed_entities_df = df.select(
+            'billed_entity_name',
+            'billed_entity_number',
+            'billed_entity_phone',
+            'billed_entity_email',
+            'billed_entity_city',
+            'billed_entity_state',
+            'billed_entity_zip'
+        )
 
-        return rfp_df
+        contacts_df = df.select(
+            'contact_name',
+            'contact_email',
+            'contact_phone',
+            'contact_phone_ext',
+            'contact_address1',
+            'contact_address2',
+            'contact_city',
+            'contact_state',
+            'contact_zip'
+        )
+
+        services_df = df.select(
+            'service_category',
+            'service_type',
+            'service_request_id'
+        )
+
+        return rfp_df, billed_entities_df, contacts_df, services_df
 
     def save_tables(self, funding_year):
         rfp_df, billed_entities_df, contacts_df, services_df = self.transform_data(f"./bronze/{funding_year}/files/raw_data")
@@ -98,20 +112,3 @@ class Transform:
         self.save_data(funding_year, format='json', compression='gzip')  
         self.save_tables(funding_year)
 
-if __name__ == "__main__":
-    dataset_id = "jt8s-3q52"
-    base_url = "opendata.usac.org"
-    api_client = ExtractAPI(base_url, dataset_id)
-    funding_year = "2024"
-    
-    spark = SparkSession.builder \
-        .appName("Transform") \
-        .config("spark.executor.memory", "4g") \
-        .config("spark.driver.memory", "4g") \
-        .getOrCreate()
-
-    data = api_client.get_complete_data(funding_year)
-    transform = Transform(data, spark)
-    transform.process(funding_year)
-
-    print("Processing completed.")
