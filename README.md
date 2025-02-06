@@ -41,24 +41,24 @@ python api-integration.py
 
 - Run Full Pipeline
 ```bash
-curl -X 'POST' 'http://hostname:8080/run_pipeline' -H 'accept: application/json'
+curl -X 'POST' 'http://localhost:8080/run_pipeline' -H 'accept: application/json'
 ```
 - Extract Data
 ```bash
-curl -X 'POST' 'http://hostname:8080extract' -H 'accept: application/json'
+curl -X 'POST' 'http://localhost:8080extract' -H 'accept: application/json'
 ```
 - Transform Data
 bash
 ```bash
-curl -X 'POST' 'http://hostname:8080/transform' -H 'accept: application/json'
+curl -X 'POST' 'http://localhost:8080/transform' -H 'accept: application/json'
 ```
 - Read CSV
 ```bash
-curl -X 'GET' 'http://hostname:8080/read_csv/rfp_table.csv' -H 'accept: application/json'
+curl -X 'GET' 'http://localhost:8080/read_csv/rfp_table.csv' -H 'accept: application/json'
 ```
 - Get Summary
 ```bash
-curl -X 'GET' 'http://hostname:8080summary' -H 'accept: application/json'
+curl -X 'GET' 'http://localhost:8000/summary' -H 'accept: application/json'
 ```
 🐳 Running with Docker
 - Build the Docker Image
@@ -69,8 +69,8 @@ docker build -t api-integration-spark-service .
 ```bash
 docker run -p 8000:8000  api-integration-spark-service 
 ```
-- The API will be available at:
-http://localhost:8000/docs
+### The API will be available at:
+- http://localhost:8000/
 
 ⚡ Notes
 
