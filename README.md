@@ -55,14 +55,14 @@ curl -X 'GET' 'http://localhost:8080/read_csv/rfp_table.csv' -H 'accept: applica
 ```bash
 curl -X 'GET' 'http://localhost:8080/summary' -H 'accept: application/json'
 ```
-🐳 Running with Docker
+## 🐳 Running with Docker(recomendary)
 - Build the Docker Image
 ```bash
 docker build -t api-integration-spark-service .
 ```
 - Run the Container
 ```bash
-docker run -p 8000:8000  api-integration-spark-service 
+docker run -p 8080:8080  api-integration-spark-service 
 ```
 ### The API will be available at:
 - http://localhost:8000/
@@ -71,4 +71,4 @@ docker run -p 8000:8000  api-integration-spark-service
 
 - The API automatically extracts data from the Socrata API and processes it using PySpark.
 - The run_pipeline endpoint runs the full ETL process.
-- Data is stored in CSV format inside the ./silver/{funding_year}/files directory.
+- Data is stored in CSV format inside the ./silver/{funding_year}/files directory.QM1KHPpA3eGCcDu

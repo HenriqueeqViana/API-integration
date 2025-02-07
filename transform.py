@@ -1,5 +1,6 @@
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
+from pyspark.sql import Window
 import os
 import logging
 from extract import ExtractAPI
@@ -33,60 +34,72 @@ class Transform:
         df = self.read_data()
     
    
-        df = df.filter((F.col('form_version') == 'Current') | (F.col('form_version') == 'Original'))
+        df = df.filter(F.col('form_version').isin(['Current', 'Original']))
 
     
-        df = df.select(
-        '*',
-        F.coalesce(F.col('quantity').cast('int'), F.lit(1)).alias('total_services_requested'),
-        F.regexp_extract(F.col('minimum_capacity'), r'(\d+\.?\d*)', 0).alias('minimum_capacity_value'),
-        F.regexp_extract(F.col('minimum_capacity'), r'(\D+)', 0).alias('minimum_capacity_unit'),
-        F.regexp_extract(F.col('maximum_capacity'), r'(\d+\.?\d*)', 0).alias('maximum_capacity_value'),
-        F.regexp_extract(F.col('maximum_capacity'), r'(\D+)', 0).alias('maximum_capacity_unit')
+        window_spec = Window.partitionBy('application_number').orderBy(F.when(F.col('form_version') == 'Current', 1).otherwise(2))
+
+    
+        df = df.withColumn('rank', F.row_number().over(window_spec))
+
+    
+        df = df.filter(F.col('rank') == 1).drop('rank')
+        
+
+        df = df.withColumn(
+            'total_services_requested',
+            F.coalesce(F.col('quantity').cast('int'), F.lit(1)) * F.coalesce(F.col('entities').cast('int'), F.lit(1))
         )
 
-    
+        df = df.withColumn('minimum_capacity_value', F.regexp_extract(F.col('minimum_capacity'), r'(\d+\.?\d*)', 0)) \
+            .withColumn('minimum_capacity_unit', F.regexp_extract(F.col('minimum_capacity'), r'(\D+)', 0))
+
+        df = df.withColumn('maximum_capacity_value', F.regexp_extract(F.col('maximum_capacity'), r'(\d+\.?\d*)', 0)) \
+            .withColumn('maximum_capacity_unit', F.regexp_extract(F.col('maximum_capacity'), r'(\D+)', 0))
         rfp_df = df.select(
-        'application_number', 
-        df.rfp_documents.url.alias('request_for_proposal_document'), 
-        'rfp_identifier', 
-        'rfp_upload_date', 
-        'total_services_requested', 
-        'certified_date_time'
-        )
-
-    
+                    'application_number', 
+                    df.rfp_documents.url.alias('request_for_proposal_document'), 
+                    'rfp_identifier', 
+                    'rfp_upload_date', 
+                    'minimum_capacity_value', 
+                    'minimum_capacity_unit',
+                    'maximum_capacity_value', 
+                    'maximum_capacity_unit', 
+                    'total_services_requested', 
+                    'form_version', 
+                    'funding_year', 
+                    'fcc_form_470_status', 
+                    'allowable_contract_date', 
+                    'certified_date_time', 
+                    'last_modified_date_time'
+                )
+        
         billed_entities_df = df.select(
-        F.expr("uuid()").alias("unique_id"),
-        'billed_entity_name',
-        'billed_entity_number',
-        'billed_entity_phone',
-        'billed_entity_email',
-        'billed_entity_city',
-        'billed_entity_state',
-        'billed_entity_zip'
+            'billed_entity_name',
+            'billed_entity_number',
+            'billed_entity_phone',
+            'billed_entity_email',
+            'billed_entity_city',
+            'billed_entity_state',
+            'billed_entity_zip'
         )
 
-   
         contacts_df = df.select(
-        F.expr("uuid()").alias("unique_id"),
-        'contact_name',
-        'contact_email',
-        'contact_phone',
-        'contact_phone_ext',
-        'contact_address1',
-        'contact_address2',
-        'contact_city',
-        'contact_state',
-        'contact_zip'
+            'contact_name',
+            'contact_email',
+            'contact_phone',
+            'contact_phone_ext',
+            'contact_address1',
+            'contact_address2',
+            'contact_city',
+            'contact_state',
+            'contact_zip'
         )
 
-    
         services_df = df.select(
-        F.expr("uuid()").alias("unique_id"),
-        'service_request_id',
-        'service_category',
-        'service_type'
+            'service_category',
+            'service_type',
+            'service_request_id'
         )
 
         return rfp_df, billed_entities_df, contacts_df, services_df  
@@ -127,22 +140,3 @@ class Transform:
         self.save_tables(rfp_df, billed_entities_df, contacts_df, services_df, funding_year)
 
 
-dataset_id = os.getenv("DATASET_ID", "jt8s-3q52")
-base_url = os.getenv("BASE_URL", "opendata.usac.org")
-funding_year = os.getenv("FUNDING_YEAR", "2024")
-
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
-
-spark = SparkSession.builder \
-    .appName("FastAPI-Spark") \
-    .master("local[*]") \
-    .config("spark.executor.memory", "4g") \
-    .config("spark.driver.memory", "4g") \
-    .getOrCreate()
-
-api_client = ExtractAPI(base_url, dataset_id)
-data = api_client.get_complete_data(funding_year)
-print(len(data))
-transformer = Transform(data, spark)   
-df= transformer.read_data()
-df.count()
