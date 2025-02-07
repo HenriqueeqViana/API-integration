@@ -7,7 +7,7 @@ import json
 import logging
 import uvicorn
 import pyspark.sql.functions as F
-os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 
 spark = SparkSession.builder \
     .appName("FastAPI-Spark") \

@@ -1,25 +1,26 @@
-FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
+FROM jupyter/base-notebook:latest
+
+USER root
 
 
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends \
-    openjdk-17-jre \
-    wget \
-    curl \
-    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y openjdk-11-jdk
 
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 
-RUN cd /tmp && \
-    wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz && \
-    tar -xzf /tmp/spark-3.5.0-bin-hadoop3.tgz -C / && \
-    mv /spark-3.5.0-bin-hadoop3 /spark && \
-    rm -rf /tmp/spark-3.5.0-bin-hadoop3.tgz
+
+ENV SPARK_VERSION=3.5.1
+ENV HADOOP_VERSION=3
 
 
-ENV SPARK_HOME=/spark
+RUN wget "https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz" && \
+    tar -xvzf spark-3.5.1-bin-hadoop3.tgz && \
+    mv spark-3.5.1-bin-hadoop3 /usr/lib && \
+    rm spark-3.5.1-bin-hadoop3.tgz
+
+ENV SPARK_HOME=/usr/lib/spark-3.5.1-bin-hadoop3
+ENV PATH=$PATH:$SPARK_HOME/bin
 
 
 WORKDIR /api-integration

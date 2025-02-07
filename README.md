@@ -4,11 +4,11 @@ This project provides a FastAPI service to extract, transform, and store data us
 
 ## 📌 Requirements
 - Python 3.8+
-- PySpark
+- PySpark 3.5.1
 - FastAPI
 - Requests
 - Sodapy (for API requests)
-- JDK 17
+- JDK 11
 ## 🚀 How to Install local running using ( Not recomendary)
 1. Clone this repo:
 ```bash

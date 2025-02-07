@@ -10,9 +10,10 @@ class Transform:
             raise ValueError("raw_data must be a list of dictionaries.")
         self.raw_data = raw_data
         self.spark = spark
+        logging.info(len(self.raw_data))
 
     def read_data(self):
-        
+        logging.info(self.spark.createDataFrame(self.raw_data).count())
         return self.spark.createDataFrame(self.raw_data )
 
     def save_data(self,funding_year, format="csv", compression="none"):
@@ -126,4 +127,22 @@ class Transform:
         self.save_tables(rfp_df, billed_entities_df, contacts_df, services_df, funding_year)
 
 
+dataset_id = os.getenv("DATASET_ID", "jt8s-3q52")
+base_url = os.getenv("BASE_URL", "opendata.usac.org")
+funding_year = os.getenv("FUNDING_YEAR", "2024")
 
+os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
+
+spark = SparkSession.builder \
+    .appName("FastAPI-Spark") \
+    .master("local[*]") \
+    .config("spark.executor.memory", "4g") \
+    .config("spark.driver.memory", "4g") \
+    .getOrCreate()
+
+api_client = ExtractAPI(base_url, dataset_id)
+data = api_client.get_complete_data(funding_year)
+print(len(data))
+transformer = Transform(data, spark)   
+df= transformer.read_data()
+df.count()
