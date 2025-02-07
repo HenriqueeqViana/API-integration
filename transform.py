@@ -13,13 +13,13 @@ class Transform:
 
     def read_data(self):
         
-        return spark.createDataFrame(self.raw_data )
+        return self.spark.createDataFrame(self.raw_data )
 
     def save_data(self,funding_year, format="csv", compression="none"):
         df = self.read_data()
         directory_path = f"./bronze/{funding_year}/files"
         os.makedirs(directory_path, exist_ok=True)
-        file_path = f"{directory_path}/raw_data"
+        file_path = f"{directory_path}/raw"
 
         if format == "csv":
             df.write.csv(f"{file_path}.csv", header=True, mode="overwrite", compression=compression)
@@ -30,48 +30,62 @@ class Transform:
 
     def transform_data(self):
         df = self.read_data()
+    
+   
         df = df.filter((F.col('form_version') == 'Current') | (F.col('form_version') == 'Original'))
 
-        df = df.withColumn(
-            'total_services_requested',
-            F.coalesce(F.col('quantity').cast('int'), F.lit(1)) * F.coalesce(F.col('entities').cast('int'), F.lit(1))
+    
+        df = df.select(
+        '*',
+        F.coalesce(F.col('quantity').cast('int'), F.lit(1)).alias('total_services_requested'),
+        F.regexp_extract(F.col('minimum_capacity'), r'(\d+\.?\d*)', 0).alias('minimum_capacity_value'),
+        F.regexp_extract(F.col('minimum_capacity'), r'(\D+)', 0).alias('minimum_capacity_unit'),
+        F.regexp_extract(F.col('maximum_capacity'), r'(\d+\.?\d*)', 0).alias('maximum_capacity_value'),
+        F.regexp_extract(F.col('maximum_capacity'), r'(\D+)', 0).alias('maximum_capacity_unit')
         )
 
+    
         rfp_df = df.select(
-            'application_number', 
-            df.rfp_documents.url.alias('request_for_proposal_document'), 
-            'rfp_identifier', 
-            'rfp_upload_date', 
-            'total_services_requested', 
-            'certified_date_time'
+        'application_number', 
+        df.rfp_documents.url.alias('request_for_proposal_document'), 
+        'rfp_identifier', 
+        'rfp_upload_date', 
+        'total_services_requested', 
+        'certified_date_time'
         )
 
+    
         billed_entities_df = df.select(
-            'billed_entity_name',
-            'billed_entity_number',
-            'billed_entity_phone',
-            'billed_entity_email',
-            'billed_entity_city',
-            'billed_entity_state',
-            'billed_entity_zip'
+        F.expr("uuid()").alias("unique_id"),
+        'billed_entity_name',
+        'billed_entity_number',
+        'billed_entity_phone',
+        'billed_entity_email',
+        'billed_entity_city',
+        'billed_entity_state',
+        'billed_entity_zip'
         )
 
+   
         contacts_df = df.select(
-            'contact_name',
-            'contact_email',
-            'contact_phone',
-            'contact_phone_ext',
-            'contact_address1',
-            'contact_address2',
-            'contact_city',
-            'contact_state',
-            'contact_zip'
+        F.expr("uuid()").alias("unique_id"),
+        'contact_name',
+        'contact_email',
+        'contact_phone',
+        'contact_phone_ext',
+        'contact_address1',
+        'contact_address2',
+        'contact_city',
+        'contact_state',
+        'contact_zip'
         )
 
+    
         services_df = df.select(
-            'service_category',
-            'service_type',
-            'service_request_id'
+        F.expr("uuid()").alias("unique_id"),
+        'service_request_id',
+        'service_category',
+        'service_type'
         )
 
         return rfp_df, billed_entities_df, contacts_df, services_df  
@@ -87,7 +101,7 @@ class Transform:
 
         monthly_summary = rfp_df.withColumn("month", F.month("certified_date_time")) \
                                  .groupBy("month") \
-                                 .agg(F.avg("total_services_requested").alias("avg_services_requested"))
+                                 .agg(F.round(F.avg("total_services_requested")).alias("avg_services_requested"))
 
         monthly_summary = monthly_summary.withColumn("month_name", F.expr("CASE month " +
             "WHEN 1 THEN 'january' " +

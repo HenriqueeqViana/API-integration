@@ -65,8 +65,7 @@ def transform_data():
     if not os.path.exists(raw_data_path):
         raise HTTPException(status_code=400, detail="No extracted data found for transformation.")
     
-    with open(raw_data_path, "r") as f:
-        data = json.load(f)
+    data = []
     
     transformer = Transform(data, spark)
     rfp_df, billed_entities_df, contacts_df, services_df = transformer.transform_data(raw_data_path)
@@ -91,15 +90,16 @@ def generate_summary_response():
     logger.info("Generating summary...")
     base_path = f"./silver/{funding_year}/files"
     total_files = len([f for f in os.listdir(base_path) if f.endswith(".csv")])
-    
+    rfp_df = spark.read.csv(f"{base_path}/rfp_table.csv", header=True, inferSchema=True)
+    distinct_count = rfp_df.select("application_number").distinct().count()
     summary_file_path = f"{base_path}/monthly_summary.csv"
     if os.path.exists(summary_file_path):
         summary_df = spark.read.csv(summary_file_path, header=True, inferSchema=True)
         
         summary = {
             "ano": funding_year,
-            "total_files_created": total_files,
-            "rfps_analyzed": summary_df.count(),
+            "total_files_created": total_files-1,
+            "rfps_analyzed": distinct_count,
         }
 
         monthly_counts = {row.month_name: row.avg_services_requested for row in summary_df.collect()}
@@ -109,7 +109,7 @@ def generate_summary_response():
         summary = {
             "ano": funding_year,
             "total_files_created": total_files,
-            "rfps_analyzed": 0,
+            "rfps_analyzed": distinct_count,
         }
 
     return summary
