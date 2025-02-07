@@ -75,6 +75,7 @@ class Transform:
                 )
         
         billed_entities_df = df.select(
+            F.expr("uuid()").alias("unique_id"),
             'billed_entity_name',
             'billed_entity_number',
             'billed_entity_phone',
@@ -85,6 +86,7 @@ class Transform:
         )
 
         contacts_df = df.select(
+            F.expr("uuid()").alias("unique_id"),
             'contact_name',
             'contact_email',
             'contact_phone',
@@ -97,6 +99,7 @@ class Transform:
         )
 
         services_df = df.select(
+            F.expr("uuid()").alias("unique_id"),
             'service_category',
             'service_type',
             'service_request_id'
