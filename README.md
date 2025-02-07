@@ -47,18 +47,13 @@ curl -X 'POST' 'http://localhost:8080/run_pipeline' -H 'accept: application/json
 ```bash
 curl -X 'POST' 'http://localhost:8080/extract' -H 'accept: application/json'
 ```
-- Transform Data
-bash
-```bash
-curl -X 'POST' 'http://localhost:8080/transform' -H 'accept: application/json'
-```
 - Read CSV
 ```bash
 curl -X 'GET' 'http://localhost:8080/read_csv/rfp_table.csv' -H 'accept: application/json'
 ```
 - Get Summary
 ```bash
-curl -X 'GET' 'http://localhost:8000/summary' -H 'accept: application/json'
+curl -X 'GET' 'http://localhost:8080/summary' -H 'accept: application/json'
 ```
 🐳 Running with Docker
 - Build the Docker Image

@@ -117,7 +117,7 @@ class Transform:
             "WHEN 11 THEN 'november' " +
             "WHEN 12 THEN 'december' END"))
 
-        monthly_summary = monthly_summary.select("month_name", "avg_services_requested")
+        monthly_summary = monthly_summary.select("month_name", "avg_services_requested","month")
         monthly_summary.write.csv(f"{base_path}/monthly_summary.csv", header=True, mode="overwrite")
 
     def process(self, funding_year):

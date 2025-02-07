@@ -58,19 +58,7 @@ def extract_data():
     
     return {"message": "Data extracted successfully"}
 
-@app.post("/transform")
-def transform_data():
-    logger.info("Transforming data...")
-    raw_data_path = f"./bronze/{funding_year}/files/"
-    if not os.path.exists(raw_data_path):
-        raise HTTPException(status_code=400, detail="No extracted data found for transformation.")
-    
-    data = []
-    
-    transformer = Transform(data, spark)
-    rfp_df, billed_entities_df, contacts_df, services_df = transformer.transform_data(raw_data_path)
-    transformer.save_tables(rfp_df, billed_entities_df, contacts_df, services_df, funding_year)
-    return generate_summary_response()
+
 
 @app.get("/read_csv/{filename}")
 def read_csv(filename: str):
@@ -102,7 +90,7 @@ def generate_summary_response():
             "rfps_analyzed": distinct_count,
         }
 
-        monthly_counts = {row.month_name: row.avg_services_requested for row in summary_df.collect()}
+        monthly_counts = {row.month_name: row.avg_services_requested for row in summary_df.orderBy(F.col("month")).collect()}
         summary.update(monthly_counts)
 
     else:
