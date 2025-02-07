@@ -1,19 +1,31 @@
-FROM python:3.11-buster
+FROM mcr.microsoft.com/devcontainers/python:3.12-bookworm
 
 
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-ENV PATH=$JAVA_HOME/bin:$PATH
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    openjdk-17-jre \
+    wget \
+    curl \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 
-RUN apt-get update && apt-get install -y \
-    openjdk-8-jdk \
-    && rm -rf /var/lib/apt/lists/*
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 
-WORKDIR /app
+RUN cd /tmp && \
+    wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz && \
+    tar -xzf /tmp/spark-3.5.0-bin-hadoop3.tgz -C / && \
+    mv /spark-3.5.0-bin-hadoop3 /spark && \
+    rm -rf /tmp/spark-3.5.0-bin-hadoop3.tgz
 
 
-COPY . /app
+ENV SPARK_HOME=/spark
+
+
+WORKDIR /api-integration
+
+
+COPY . /api-integration
 
 
 RUN pip3 install --no-cache-dir -r requirements.txt

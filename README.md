@@ -8,7 +8,7 @@ This project provides a FastAPI service to extract, transform, and store data us
 - FastAPI
 - Requests
 - Sodapy (for API requests)
-- JDK 8
+- JDK 17
 ## 🚀 How to Install local running using ( Not recomendary)
 1. Clone this repo:
 ```bash
@@ -45,7 +45,7 @@ curl -X 'POST' 'http://localhost:8080/run_pipeline' -H 'accept: application/json
 ```
 - Extract Data
 ```bash
-curl -X 'POST' 'http://localhost:8080extract' -H 'accept: application/json'
+curl -X 'POST' 'http://localhost:8080/extract' -H 'accept: application/json'
 ```
 - Transform Data
 bash

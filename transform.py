@@ -1,30 +1,35 @@
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
 import os
+import logging
+from extract import ExtractAPI
 
 class Transform:
     def __init__(self, raw_data, spark):
+        if not isinstance(raw_data, list):
+            raise ValueError("raw_data must be a list of dictionaries.")
         self.raw_data = raw_data
         self.spark = spark
 
     def read_data(self):
-        return self.spark.createDataFrame(self.raw_data)
+        
+        return spark.createDataFrame(self.raw_data )
 
-    def save_data(self, funding_year, format="csv", compression="none"):
+    def save_data(self,funding_year, format="csv", compression="none"):
         df = self.read_data()
         directory_path = f"./bronze/{funding_year}/files"
         os.makedirs(directory_path, exist_ok=True)
         file_path = f"{directory_path}/raw_data"
 
         if format == "csv":
-            df.write.csv(file_path, header=True, mode="overwrite", compression=compression)
+            df.write.csv(f"{file_path}.csv", header=True, mode="overwrite", compression=compression)
         elif format == "json":
-            df.coalesce(1).write.json(file_path, mode="overwrite", compression='gzip') 
+            df.coalesce(1).write.json(f"{file_path}.json", mode="overwrite", compression='gzip')
         else:
             raise ValueError("Invalid format specified. Please use 'csv' or 'json'.")
 
-    def transform_data(self, file_path):
-        df = self.spark.read.json(file_path)
+    def transform_data(self):
+        df = self.read_data()
         df = df.filter((F.col('form_version') == 'Current') | (F.col('form_version') == 'Original'))
 
         df = df.withColumn(
@@ -102,6 +107,9 @@ class Transform:
         monthly_summary.write.csv(f"{base_path}/monthly_summary.csv", header=True, mode="overwrite")
 
     def process(self, funding_year):
-        self.save_data(funding_year, format='json', compression='gzip')  
-        rfp_df, billed_entities_df, contacts_df, services_df = self.transform_data(f"./bronze/{funding_year}/files/raw_data")
+        self.save_data(funding_year, format='json', compression='gzip')
+        rfp_df, billed_entities_df, contacts_df, services_df = self.transform_data()
         self.save_tables(rfp_df, billed_entities_df, contacts_df, services_df, funding_year)
+
+
+

@@ -7,16 +7,6 @@ import json
 import logging
 import uvicorn
 import pyspark.sql.functions as F
-
-app = FastAPI()
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-dataset_id = os.getenv("DATASET_ID", "jt8s-3q52")
-base_url = os.getenv("BASE_URL", "http://opendata.usac.org")
-funding_year = os.getenv("FUNDING_YEAR", "2024")
-
 os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-8-openjdk-amd64"
 
 spark = SparkSession.builder \
@@ -25,6 +15,16 @@ spark = SparkSession.builder \
     .config("spark.executor.memory", "4g") \
     .config("spark.driver.memory", "4g") \
     .getOrCreate()
+
+app = FastAPI()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+dataset_id = os.getenv("DATASET_ID", "jt8s-3q52")
+base_url = os.getenv("BASE_URL", "opendata.usac.org")
+funding_year = os.getenv("FUNDING_YEAR", "2024")
+
 
 os.makedirs(f"./bronze/{funding_year}/files", exist_ok=True)
 os.makedirs(f"./silver/{funding_year}/files", exist_ok=True)
@@ -61,7 +61,7 @@ def extract_data():
 @app.post("/transform")
 def transform_data():
     logger.info("Transforming data...")
-    raw_data_path = f"./bronze/{funding_year}/files/*.json"
+    raw_data_path = f"./bronze/{funding_year}/files/"
     if not os.path.exists(raw_data_path):
         raise HTTPException(status_code=400, detail="No extracted data found for transformation.")
     
@@ -69,7 +69,7 @@ def transform_data():
         data = json.load(f)
     
     transformer = Transform(data, spark)
-    rfp_df, billed_entities_df, contacts_df, services_df = transformer.transform_data(f"./bronze/{funding_year}/files/raw_data")
+    rfp_df, billed_entities_df, contacts_df, services_df = transformer.transform_data(raw_data_path)
     transformer.save_tables(rfp_df, billed_entities_df, contacts_df, services_df, funding_year)
     return generate_summary_response()
 
