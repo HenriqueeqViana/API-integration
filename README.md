@@ -8,7 +8,7 @@ This project provides a FastAPI service to extract, transform, and store data us
 - FastAPI
 - Requests
 - Sodapy (for API requests)
-
+- JDK 8
 ## 🚀 How to Install local running using ( Not recomendary)
 1. Clone this repo:
 ```bash
