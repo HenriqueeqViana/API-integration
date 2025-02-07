@@ -71,4 +71,4 @@ docker run -p 8080:8080  api-integration-spark-service
 
 - The API automatically extracts data from the Socrata API and processes it using PySpark.
 - The run_pipeline endpoint runs the full ETL process.
-- Data is stored in CSV format inside the ./silver/{funding_year}/files directory.QM1KHPpA3eGCcDu
+- Data is stored in CSV format inside the ./silver/{funding_year}/files directory.
