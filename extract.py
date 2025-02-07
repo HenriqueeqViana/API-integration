@@ -43,11 +43,3 @@ class ExtractAPI:
             all_data.extend(data)
             page += 1
         return all_data
-
-if __name__ == "__main__":
-    dataset_id = "jt8s-3q52"
-    base_url = "opendata.usac.org"
-    api_client = ExtractAPI(base_url, dataset_id)
-    funding_year = "2024"
-    data = api_client.get_complete_data(funding_year)
-    print(f"Total de registros de {funding_year}: {len(data)}")
