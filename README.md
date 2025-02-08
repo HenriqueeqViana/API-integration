@@ -34,7 +34,6 @@ python api-integration.py
 ### Method	Endpoint	Description
 - POST	/run_pipeline	Extracts, transforms, and saves data.
 - POST	/extract	Only extracts and saves raw data.
-- POST	/transform	Processes raw data and stores the transformed data.
 - GET	/read_csv/{filename}	Reads a stored CSV file.
 - GET	/summary	Returns execution summary.
 🔹 Example Requests
